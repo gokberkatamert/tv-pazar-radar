@@ -1,0 +1,45 @@
+
+name: Collect TV prices
+
+on:
+  schedule:
+    - cron: '0 10 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tv-collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Collect catalog snapshots
+        run: npm run collect
+      - name: Generate summary and optionally send email
+        if: success()
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          REPORT_EMAIL_TO: ${{ secrets.REPORT_EMAIL_TO }}
+          REPORT_EMAIL_FROM: ${{ secrets.REPORT_EMAIL_FROM }}
+          DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+        run: npm run report
+      - name: Commit new snapshots
+        run: |
+          git config user.name 'tv-radar-bot'
+          git config user.email 'tv-radar-bot@users.noreply.github.com'
+          git add data/
+          if ! git diff --cached --quiet; then
+            git commit -m "data: weekly TV catalog $(date -u +%F)"
+            git push
+          fi
