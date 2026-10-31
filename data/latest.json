@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-31T10:39:46.091Z",
+  "generatedAt": "2026-10-31T11:35:41.053Z",
   "products": [
     {
       "id": "mediamarkt:/tr/product/_altus-al50-9825-50-inc-127-cm-dahili-uydu-alicili-4k-uhd-tv-168979895.html",
@@ -3280,17 +3280,6 @@
       "matchKey": ""
     },
     {
-      "id": "mediamarkt:/tr/product/_thomson-55mg7c15-55-inc-139-ekran-uydu-alicili-smart-uhd-4k-mini-led-google-tv-1248969.html",
-      "store": "mediamarkt",
-      "title": "THOMSON 55MG7C15 55 inç 139 Ekran Uydu Alıcılı Smart UHD 4K Mini LED Google TV",
-      "brand": "THOMSON",
-      "model": "",
-      "price": 5000,
-      "url": "https://www.mediamarkt.com.tr/tr/product/_thomson-55mg7c15-55-inc-139-ekran-uydu-alicili-smart-uhd-4k-mini-led-google-tv-1248969.html",
-      "image": "https://assets.mmsrg.com/isr/166325/c1/-/ASSET_MMS_160754933?x=416&y=416&format=webp&quality=60&sp=yes&strip=yes&trim=yes&ex=416&ey=416&align=center&resizesource&unsharp=0.5x0.5",
-      "matchKey": ""
-    },
-    {
       "id": "mediamarkt:/tr/product/_thomson-55qg7c14-55-inc-139-ekran-uydu-alicili-uhd-4k-google-smart-qled-pro-tv-1247933.html",
       "store": "mediamarkt",
       "title": "THOMSON 55QG7C14 55 inç 139 Ekran Uydu Alıcılı UHD 4K Google Smart QLED Pro TV",
@@ -3508,17 +3497,6 @@
       "price": 20999,
       "url": "https://www.vatanbilgisayar.com/grundig-43gqf6600-43inc-108-cm.html",
       "image": "https://cdn.vatanbilgisayar.com/Upload/PRODUCT/grundig/thumb/160504-1_small.jpg",
-      "matchKey": ""
-    },
-    {
-      "id": "vatan:/onvo-50vq90f3ub-50inc-127-cm-frameless-uhd-google-smart-qled-tv-uydu-alici.html",
-      "store": "vatan",
-      "title": "0,0 50VQ90F3UB ONVO 50VQ90F3UB 50inc 127 cm Frameless UHD Google Smart Qled TV,Uydu Alıcı 19.999 TL Paraf ile Peşin Fiyatına 4 Taksit",
-      "brand": "ONVO",
-      "model": "",
-      "price": 19999,
-      "url": "https://www.vatanbilgisayar.com/onvo-50vq90f3ub-50inc-127-cm-frameless-uhd-google-smart-qled-tv-uydu-alici.html",
-      "image": "https://cdn.vatanbilgisayar.com/Upload/PRODUCT/onvo/thumb/160982-1_small.jpg",
       "matchKey": ""
     },
     {
@@ -5227,6 +5205,17 @@
       "matchKey": ""
     },
     {
+      "id": "vatan:/onvo-50vq90f3ub-50inc-127-cm-frameless-uhd-google-smart-qled-tv-uydu-alici.html",
+      "store": "vatan",
+      "title": "YENİ ÜRÜN 0,0 50VQ90F3UB ONVO 50VQ90F3UB 50inc 127 cm Frameless UHD Google Smart Qled TV,Uydu Alıcı 19.999 TL Paraf ile Peşin Fiyatına 4 Taksit",
+      "brand": "ONVO",
+      "model": "",
+      "price": 19999,
+      "url": "https://www.vatanbilgisayar.com/onvo-50vq90f3ub-50inc-127-cm-frameless-uhd-google-smart-qled-tv-uydu-alici.html",
+      "image": "https://cdn.vatanbilgisayar.com/Upload/PRODUCT/onvo/thumb/160982-1_small.jpg",
+      "matchKey": ""
+    },
+    {
       "id": "vatan:/grundig-55-gq-770a-55-inc-139-cm-4k-uhd-dlg-120-hz-google-smart-qled-tv-uydu-alicili.html",
       "store": "vatan",
       "title": "YENİ ÜRÜN 0,0 55GQ770A GRUNDIG 55GQ770A 55 inc 139 cm 4K UHD DLG 120 Hz Google Smart QLED TV, Uydu Alıcılı 41.999 TL Paraf ile Peşin Fiyatına 4 Taksit",
@@ -5416,40 +5405,31 @@
   ],
   "changes": [],
   "newProducts": [],
-  "removedProducts": [],
+  "removedProducts": [
+    {
+      "id": "mediamarkt:/tr/product/_thomson-55mg7c15-55-inc-139-ekran-uydu-alicili-smart-uhd-4k-mini-led-google-tv-1248969.html",
+      "store": "mediamarkt",
+      "title": "THOMSON 55MG7C15 55 inç 139 Ekran Uydu Alıcılı Smart UHD 4K Mini LED Google TV",
+      "brand": "THOMSON",
+      "model": "",
+      "price": 5000,
+      "url": "https://www.mediamarkt.com.tr/tr/product/_thomson-55mg7c15-55-inc-139-ekran-uydu-alicili-smart-uhd-4k-mini-led-google-tv-1248969.html",
+      "image": "https://assets.mmsrg.com/isr/166325/c1/-/ASSET_MMS_160754933?x=416&y=416&format=webp&quality=60&sp=yes&strip=yes&trim=yes&ex=416&ey=416&align=center&resizesource&unsharp=0.5x0.5",
+      "matchKey": ""
+    }
+  ],
   "stores": {
     "vatan": {
       "ok": true,
       "count": 180,
-      "expectedCount": 180,
-      "attempts": 8
+      "expectedCount": 181,
+      "attempts": 9
     },
     "mediamarkt": {
       "ok": true,
-      "count": 312,
-      "expectedCount": 320,
+      "count": 311,
+      "expectedCount": 321,
       "attempts": 11
-    },
-    "arcelik": {
-      "ok": false,
-      "count": 0,
-      "expectedCount": 82,
-      "attempts": 2,
-      "error": "HTTP 403"
-    },
-    "beko": {
-      "ok": false,
-      "count": 0,
-      "expectedCount": 81,
-      "attempts": 2,
-      "error": "HTTP 403"
-    },
-    "grundig": {
-      "ok": false,
-      "count": 0,
-      "expectedCount": 80,
-      "attempts": 2,
-      "error": "HTTP 403"
     }
   },
   "history": [
@@ -5494,10 +5474,31 @@
           "error": "HTTP 403"
         }
       }
+    },
+    {
+      "date": "2026-10-31T11:35:41.053Z",
+      "total": 491,
+      "changes": 0,
+      "newProducts": 0,
+      "meanPrice": 80857,
+      "stores": {
+        "vatan": {
+          "ok": true,
+          "count": 180,
+          "expectedCount": 181,
+          "attempts": 9
+        },
+        "mediamarkt": {
+          "ok": true,
+          "count": 311,
+          "expectedCount": 321,
+          "attempts": 11
+        }
+      }
     }
   ],
   "comparisons": [],
   "monthComparison": null,
-  "status": "partial",
+  "status": "ok",
   "baselineDate": "2026-10-31T10:39:46.091Z"
 }
