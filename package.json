@@ -1,6 +1,6 @@
 {
   "name": "tv-pazar-radar",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,10 @@
     "build": "vite build && node scripts/copy-data.mjs",
     "preview": "vite preview",
     "collect": "node scripts/collect.mjs",
-    "report": "node scripts/report.mjs"
+    "report": "node scripts/report.mjs",
+    "diagnose": "node scripts/diagnose.mjs",
+    "diagnose:local": "TV_BROWSER=chrome TV_HEADLESS=false node scripts/diagnose.mjs",
+    "collect:local": "TV_BROWSER=chrome TV_HEADLESS=false node scripts/collect.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

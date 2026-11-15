@@ -2,6 +2,7 @@ import { chromium } from 'playwright';
 import fs from 'node:fs';
 import path from 'node:path';
 import {enrich,comparisons,OFFICIAL} from './model.mjs';
+import {computeWeeklyComparison} from './weekly.mjs';
 const ROOT=process.cwd(),DATA=path.join(ROOT,'data');
 const sources={
  vatan:{url:'https://www.vatanbilgisayar.com/televizyon/',maxPages:16},
@@ -27,10 +28,31 @@ function normalize(p,store){
   return enrich({id,store,title,brand,model,price:Math.round(p.price*100)/100,url:url.href,image});
  }catch{return null}
 }
-const browser=await chromium.launch({headless:true,args:['--disable-dev-shm-usage']});
+// Some storefronts replace the document during lazy loading or redirects.
+// Retrying only the read avoids losing an otherwise successful store scan.
+async function evaluateWithNavigationRetry(page, evaluator, arg, store, pageNumber){
+  let lastError;
+  for(let attempt=1; attempt<=5; attempt++){
+    try{
+      await page.waitForLoadState('domcontentloaded',{timeout:12000}).catch(()=>{});
+      return await page.evaluate(evaluator,arg);
+    }catch(e){
+      lastError=e;
+      const message=String(e?.message||e);
+      const navigation=/Execution context was destroyed|Cannot find context|navigation|Target closed/i.test(message);
+      if(!navigation || attempt===5)break;
+      console.warn(`[${store}] page=${pageNumber} navigation during extraction; retry ${attempt}/5`);
+      await page.waitForTimeout(900*attempt).catch(()=>{});
+    }
+  }
+  throw lastError;
+}
+const headed=process.env.TV_HEADLESS==='false';
+const browser=await chromium.launch({headless:!headed,...(process.env.TV_BROWSER==='chrome'?{channel:'chrome'}:{}),args:['--disable-dev-shm-usage']});
 let output=[],stores={},failed=0;
-for(const [store,cfg] of Object.entries(sources)){
- const context=await browser.newContext({locale:'tr-TR',viewport:{width:1440,height:1000},userAgent:'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36'});
+const selected=(process.env.TV_STORES||Object.keys(sources).join(',')).split(',').map(x=>x.trim());
+for(const [store,cfg] of Object.entries(sources).filter(([store])=>selected.includes(store))){
+ const context=await browser.newContext({locale:'tr-TR',viewport:{width:1440,height:1000}});
  const page=await context.newPage();let all=new Map(),attempts=0,expectedCount=null,error='';
  page.setDefaultTimeout(7000);
  try{
@@ -39,7 +61,11 @@ for(const [store,cfg] of Object.entries(sources)){
    const url=new URL(cfg.url);
    if(n>0){ if(store==='teknosa')url.searchParams.set('page',String(n));else url.searchParams.set('page',String(n+1)); }
    const response=await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:35000});
-   if(response?.status()>=400)throw Error(`HTTP ${response.status()}`);
+   if(response?.status()>=400){
+    // Preserve products already discovered; record subsequent blocked pages as incomplete.
+    if(all.size && OFFICIAL.includes(store)){error=`HTTP ${response.status()} (sayfa ${n+1}); katalog eksik olabilir`;break}
+    throw Error(`HTTP ${response.status()}`);
+   }
    await page.waitForTimeout(1700);
    // Dynamic load-more controls: scroll through the listing, then click when available.
    for(let i=0;i<16;i++){
@@ -50,7 +76,7 @@ for(const [store,cfg] of Object.entries(sources)){
      try{await btn.click({timeout:1800});await page.waitForTimeout(900)}catch{}
     }else if(i>3)break;
    }
-   const found=await page.evaluate(({store})=>{
+   const found=await evaluateWithNavigationRetry(page,({store})=>{
     const result=[];const seen=new Set();
     const money=v=>{if(typeof v==='number')return v;const s=String(v||'').replace(/\s/g,'');let m=s.match(/(?:₺|TL)?([\d.,]+)(?:₺|TL)?/i);if(!m)return NaN;let a=m[1];if(a.includes(',')&&a.includes('.'))a=a.replace(/\./g,'').replace(',','.');else if(a.includes(','))a=a.replace(',','.');else if(/^\d{1,3}(?:\.\d{3})+$/.test(a))a=a.replace(/\./g,'');return Number(a)};
     function add(p){if(!p?.url||!p.title||!Number.isFinite(p.price)||p.price<=0)return;const k=p.url;if(seen.has(k))return;seen.add(k);result.push(p)}
@@ -85,7 +111,7 @@ for(const [store,cfg] of Object.entries(sources)){
     const text=document.body.innerText||'';
     const counts=store==='vatan'?[...text.matchAll(/(?:modellerinde\s+)(\d+)\s+adet ürün/g)]:store==='teknosa'?[...text.matchAll(/(\d+)\s+Sonuç/g)]:['arcelik','beko','grundig'].includes(store)?[...text.matchAll(/(\d+)\s+ürün listelendi/g)]:[...text.matchAll(/\((\d+)\s+ürün\)/g)];
     return {products:result,expectedCount:counts.length?Number(counts[0][1]):null};
-   },{store});
+   },{store},store,n+1);
    for(const raw of found.products){const p=normalize(raw,store);if(p && (!OFFICIAL.includes(store)||p.brand===({arcelik:'ARÇELİK',beko:'BEKO',grundig:'GRUNDIG'}[store])))all.set(p.id,p)}
    if(found.expectedCount&&(!expectedCount||found.expectedCount>expectedCount))expectedCount=found.expectedCount;
    console.log(`[${store}] page=${n+1} total=${all.size} expected=${expectedCount||'unknown'}`);
@@ -98,8 +124,8 @@ for(const [store,cfg] of Object.entries(sources)){
   const oldCount=previous.stores?.[store]?.count||0;
   if(oldCount>=20&&all.size<oldCount*0.65)throw Error(`Coverage below 65% of previous count (${all.size}/${oldCount})`);
   // Official category pages can include other brands; do not compare brand-filtered count with category total.
-  const complete=OFFICIAL.includes(store)?all.size>=5:!!expectedCount&&all.size>=Math.floor(expectedCount*.85);
-  if(!complete)error=`Kapsam doğrulanamadı: ${all.size}/${expectedCount||'?'} ilan; karşılaştırma devre dışı`;
+  const complete=!!expectedCount && all.size>=Math.ceil(expectedCount*(OFFICIAL.includes(store)?0.9:0.85)) && !error;
+  if(!complete)error=[error,`Kapsam doğrulanamadı: ${all.size}/${expectedCount||'?'} fiyatlı ilan; karşılaştırma devre dışı`].filter(Boolean).join(' | ');
   output.push(...all.values());stores[store]={ok:complete,count:all.size,expectedCount,attempts, ...(error?{error}:{})};
  }catch(e){failed++;error=String(e.message||e);console.error(`[${store}] ${error}`);stores[store]={ok:false,count:0,expectedCount,attempts,error};}
  await context.close();
@@ -121,13 +147,8 @@ if(hasBaseline)for(const old of previous.products){if(currentStores.has(old.stor
 const priceMean=ps=>ps.length?Math.round(ps.reduce((a,p)=>a+p.price,0)/ps.length):null;
 const history=[...(previous.history||[]),{date:today,total:output.length,changes:changes.length,newProducts:newProducts.length,meanPrice:priceMean(output.filter(p=>['vatan','mediamarkt','teknosa'].includes(p.store))),stores}].slice(-104);
 const matches=comparisons(output.filter(p=>currentStores.has(p.store)));
-// Month-over-month means are calculated using the same retailer + product IDs in both snapshots.
-const monthAgo=new Date(today);monthAgo.setUTCDate(monthAgo.getUTCDate()-28);
-const files=fs.existsSync(path.join(DATA,'history'))?fs.readdirSync(path.join(DATA,'history')).filter(f=>f.endsWith('.json')).sort():[];
-const candidate=files.map(f=>read(path.join(DATA,'history',f))).filter(d=>d?.generatedAt&&new Date(d.generatedAt)<=monthAgo).sort((a,b)=>b.generatedAt.localeCompare(a.generatedAt))[0];
-let monthComparison=null;
-if(candidate){const prior=new Map(candidate.products.filter(p=>['vatan','mediamarkt','teknosa'].includes(p.store)&&candidate.stores?.[p.store]?.ok).map(p=>[p.id,p]));const same=output.filter(p=>['vatan','mediamarkt','teknosa'].includes(p.store)&&currentStores.has(p.store)&&prior.has(p.id));if(same.length>=5){const was=same.reduce((a,p)=>a+prior.get(p.id).price,0)/same.length;const now=same.reduce((a,p)=>a+p.price,0)/same.length;monthComparison={date:candidate.generatedAt,matched:same.length,previousMean:Math.round(was),currentMean:Math.round(now),changePct:Math.round((now-was)/was*10000)/100,up:same.filter(p=>p.price>prior.get(p.id).price).length,down:same.filter(p=>p.price<prior.get(p.id).price).length}}}
-const result={generatedAt:today,products:output,changes,newProducts,removedProducts,stores,history,comparisons:matches,monthComparison,status:failed?'partial':'ok',baselineDate:previous.baselineDate||today};
+const weekComparison=computeWeeklyComparison({today,currentProducts:output,currentStores,historyDir:path.join(DATA,'history')});
+const result={generatedAt:today,products:output,changes,newProducts,removedProducts,stores,history,comparisons:matches,weekComparison,monthComparison:null,status:Object.values(stores).every(v=>v.ok)?'ok':'partial',baselineDate:previous.baselineDate||today};
 fs.mkdirSync(path.join(DATA,'history'),{recursive:true});const stamp=today.slice(0,10);
 fs.writeFileSync(path.join(DATA,'history',`${stamp}.json`),JSON.stringify(result,null,2));
 fs.writeFileSync(path.join(DATA,'latest.json'),JSON.stringify(result,null,2));
